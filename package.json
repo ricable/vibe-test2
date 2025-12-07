@@ -9,6 +9,8 @@
     "load": "node load-to-postgres.js",
     "setup": "node index.js",
     "query": "node query-examples.js",
+    "advanced": "node advanced-examples.js",
+    "install-ruvector": "npx @ruvector/postgres-cli install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,7 +25,14 @@
     "huggingface",
     "vector-database",
     "telecom",
-    "5g"
+    "5g",
+    "ruvector",
+    "gnn",
+    "graph-neural-network",
+    "cypher",
+    "neo4j",
+    "hyperbolic-embeddings",
+    "attention-mechanisms"
   ],
   "author": "",
   "license": "ISC",

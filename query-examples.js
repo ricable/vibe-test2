@@ -1,23 +1,70 @@
+const { execSync } = require('child_process');
 const { Pool } = require('pg');
 require('dotenv').config();
+
+const GRAPH_NAME = '3gpp_knowledge_graph';
 
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || 5432,
-  database: process.env.POSTGRES_DB || '3gpp_knowledge_graph',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD
+  database: process.env.POSTGRES_DB || 'ruvector',
+  user: process.env.POSTGRES_USER || 'ruvector',
+  password: process.env.POSTGRES_PASSWORD || 'ruvector'
 });
 
-async function runQuery(description, query, params = []) {
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`Query: ${description}`);
-  console.log(`${'='.repeat(60)}`);
+// Build connection string for ruvector CLI
+function getConnectionString() {
+  const host = process.env.POSTGRES_HOST || 'localhost';
+  const port = process.env.POSTGRES_PORT || 5432;
+  const db = process.env.POSTGRES_DB || 'ruvector';
+  const user = process.env.POSTGRES_USER || 'ruvector';
+  const password = process.env.POSTGRES_PASSWORD || 'ruvector';
+
+  return `postgresql://${user}:${password}@${host}:${port}/${db}`;
+}
+
+function runCypherQuery(description, query) {
+  console.log(`\n${'='.repeat(70)}`);
+  console.log(`Cypher Query: ${description}`);
+  console.log(`${'='.repeat(70)}`);
+  console.log(`Query: ${query}\n`);
 
   try {
-    const result = await pool.query(query, params);
-    console.log(`\nResults (${result.rows.length} rows):`);
+    const connStr = getConnectionString();
+    const result = execSync(
+      `npx --yes @ruvector/postgres-cli -c "${connStr}" graph query ${GRAPH_NAME} "${query}"`,
+      { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
+    );
+    console.log(result);
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+function runGraphCommand(description, command) {
+  console.log(`\n${'='.repeat(70)}`);
+  console.log(`Graph Command: ${description}`);
+  console.log(`${'='.repeat(70)}`);
+  console.log(`Command: ${command}\n`);
+
+  try {
+    const result = execSync(command, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    console.log(result);
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+async function runSQLQuery(description, query) {
+  console.log(`\n${'='.repeat(70)}`);
+  console.log(`SQL Query: ${description}`);
+  console.log(`${'='.repeat(70)}`);
+  console.log(`Query: ${query}\n`);
+
+  try {
+    const result = await pool.query(query);
+    console.log(`Results (${result.rows.length} rows):`);
     console.table(result.rows);
     return result.rows;
   } catch (error) {
@@ -26,123 +73,92 @@ async function runQuery(description, query, params = []) {
 }
 
 async function main() {
-  console.log('3GPP Knowledge Graph - Example Queries\n');
+  const connStr = getConnectionString();
+
+  console.log('\n' + '='.repeat(70));
+  console.log('3GPP Knowledge Graph - RuVector Query Examples');
+  console.log('='.repeat(70));
 
   try {
-    // Example 1: Count nodes and edges
-    await runQuery(
-      'Count total nodes',
-      'SELECT COUNT(*) as total_nodes FROM nodes'
+    // Example 1: Graph Statistics
+    runGraphCommand(
+      'Get graph statistics',
+      `npx --yes @ruvector/postgres-cli -c "${connStr}" graph stats ${GRAPH_NAME}`
     );
 
-    await runQuery(
-      'Count total edges',
-      'SELECT COUNT(*) as total_edges FROM edges'
+    // Example 2: List all graphs
+    runGraphCommand(
+      'List all graphs',
+      `npx --yes @ruvector/postgres-cli -c "${connStr}" graph list`
     );
 
-    // Example 2: Sample nodes
-    await runQuery(
-      'Sample 10 nodes',
-      'SELECT id, label, properties FROM nodes LIMIT 10'
+    // Example 3: Simple Cypher - Get all nodes (limited)
+    runCypherQuery(
+      'Get 10 random nodes',
+      'MATCH (n) RETURN n LIMIT 10'
     );
 
-    // Example 3: Sample edges with labels
-    await runQuery(
-      'Sample 10 edges with relationship types',
-      'SELECT id, source_id, target_id, label FROM edges LIMIT 10'
+    // Example 4: Cypher - Get nodes with specific property
+    runCypherQuery(
+      'Find nodes with specific properties',
+      'MATCH (n) WHERE n.type IS NOT NULL RETURN n.type, count(*) as count ORDER BY count DESC LIMIT 10'
     );
 
-    // Example 4: Node degree distribution (most connected nodes)
-    await runQuery(
-      'Top 10 most connected nodes',
-      `SELECT
-        n.id,
-        n.label,
-        COUNT(e.id) as connection_count
-      FROM nodes n
-      LEFT JOIN edges e ON (n.id = e.source_id OR n.id = e.target_id)
-      GROUP BY n.id, n.label
-      ORDER BY connection_count DESC
-      LIMIT 10`
+    // Example 5: Cypher - Get relationships
+    runCypherQuery(
+      'Get sample relationships',
+      'MATCH (n)-[r]->(m) RETURN type(r) as relationship_type, count(*) as count GROUP BY type(r) ORDER BY count DESC LIMIT 10'
     );
 
-    // Example 5: Edge type distribution
-    await runQuery(
-      'Distribution of edge types',
-      `SELECT
-        label,
-        COUNT(*) as count
-      FROM edges
-      GROUP BY label
-      ORDER BY count DESC
-      LIMIT 10`
+    // Example 6: Cypher - 2-hop neighborhood
+    runCypherQuery(
+      'Get 2-hop neighborhood of a node',
+      'MATCH (n)-[r1]->(m)-[r2]->(o) RETURN n, type(r1), m, type(r2), o LIMIT 10'
     );
 
-    // Example 6: Property keys in nodes
-    await runQuery(
-      'Common property keys in nodes',
-      `SELECT
-        jsonb_object_keys(properties) as property_key,
-        COUNT(*) as usage_count
-      FROM nodes
-      GROUP BY property_key
-      ORDER BY usage_count DESC
-      LIMIT 10`
+    // Example 7: Cypher - Pattern matching
+    runCypherQuery(
+      'Find triangles in the graph',
+      'MATCH (a)-[]->(b)-[]->(c)-[]->(a) RETURN a, b, c LIMIT 5'
     );
 
-    // Example 7: Search nodes by property
-    console.log('\n' + '='.repeat(60));
-    console.log('Query: Search for nodes containing "5G" in any property');
-    console.log('='.repeat(60));
-    const searchResult = await pool.query(
-      `SELECT id, label, properties
-      FROM nodes
-      WHERE properties::text ILIKE '%5G%'
-      LIMIT 10`
+    // Example 8: SQL - Direct query on graph tables
+    await runSQLQuery(
+      'Query nodes table directly',
+      `SELECT * FROM ${GRAPH_NAME}_nodes LIMIT 10`
     );
-    console.log(`\nResults (${searchResult.rows.length} rows):`);
-    console.table(searchResult.rows);
 
-    // Example 8: Graph traversal - 2-hop neighborhood
-    const sampleNode = await pool.query('SELECT id FROM nodes LIMIT 1');
-    if (sampleNode.rows.length > 0) {
-      const nodeId = sampleNode.rows[0].id;
-      await runQuery(
-        `2-hop neighborhood from node: ${nodeId}`,
-        `WITH first_hop AS (
-          SELECT DISTINCT
-            CASE
-              WHEN e.source_id = $1 THEN e.target_id
-              ELSE e.source_id
-            END as node_id
-          FROM edges e
-          WHERE e.source_id = $1 OR e.target_id = $1
-        ),
-        second_hop AS (
-          SELECT DISTINCT
-            CASE
-              WHEN e.source_id IN (SELECT node_id FROM first_hop) THEN e.target_id
-              ELSE e.source_id
-            END as node_id
-          FROM edges e
-          WHERE e.source_id IN (SELECT node_id FROM first_hop)
-             OR e.target_id IN (SELECT node_id FROM first_hop)
-        )
-        SELECT n.id, n.label, '1-hop' as distance
-        FROM nodes n
-        WHERE n.id IN (SELECT node_id FROM first_hop)
-        UNION
-        SELECT n.id, n.label, '2-hop' as distance
-        FROM nodes n
-        WHERE n.id IN (SELECT node_id FROM second_hop)
-        LIMIT 20`,
-        [nodeId]
-      );
-    }
+    await runSQLQuery(
+      'Query edges table directly',
+      `SELECT * FROM ${GRAPH_NAME}_edges LIMIT 10`
+    );
 
-    console.log('\n' + '='.repeat(60));
+    // Example 9: Get node by ID (you'll need to replace with actual ID from your data)
+    console.log('\n' + '='.repeat(70));
+    console.log('Note: For shortest path, replace <node_id_1> and <node_id_2> with actual IDs');
+    console.log('='.repeat(70));
+    console.log('Example command:');
+    console.log(`  npx @ruvector/postgres-cli -c "${connStr}" graph shortest-path ${GRAPH_NAME} --from "node1" --to "node2"`);
+
+    // Example 10: Advanced - Search by property value
+    runCypherQuery(
+      'Search nodes containing specific text in properties',
+      'MATCH (n) WHERE toString(n) CONTAINS "5G" RETURN n LIMIT 10'
+    );
+
+    console.log('\n' + '='.repeat(70));
     console.log('Query examples completed!');
-    console.log('='.repeat(60));
+    console.log('='.repeat(70));
+    console.log('\nAdditional RuVector Features:');
+    console.log('1. GNN Operations:');
+    console.log('   npx @ruvector/postgres-cli gnn create my_gnn --type gcn --input-dim 128 --hidden-dim 64');
+    console.log('\n2. Vector Search on Graph Nodes:');
+    console.log('   npx @ruvector/postgres-cli vector create graph_embeddings --dim 384');
+    console.log('\n3. Hyperbolic Embeddings:');
+    console.log('   npx @ruvector/postgres-cli hyperbolic poincare-distance --x "[0.1,0.2]" --y "[0.3,0.4]"');
+    console.log('\n4. Attention Mechanisms:');
+    console.log('   npx @ruvector/postgres-cli attention scaled-dot-product --query "[1,2,3]" --key "[4,5,6]" --value "[7,8,9]"');
+    console.log('');
 
   } catch (error) {
     console.error('Error running queries:', error.message);
@@ -156,4 +172,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { runQuery };
+module.exports = { runCypherQuery, runGraphCommand };

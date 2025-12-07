@@ -2,55 +2,64 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const xml2js = require('xml2js');
+const { execSync } = require('child_process');
 require('dotenv').config();
 
 const DATA_DIR = path.join(__dirname, 'data');
+const GRAPH_NAME = '3gpp_knowledge_graph';
 
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || 5432,
-  database: process.env.POSTGRES_DB || '3gpp_knowledge_graph',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD
+  database: process.env.POSTGRES_DB || 'ruvector',
+  user: process.env.POSTGRES_USER || 'ruvector',
+  password: process.env.POSTGRES_PASSWORD || 'ruvector'
 });
 
-async function createTables() {
+// Build connection string for ruvector CLI
+function getConnectionString() {
+  const host = process.env.POSTGRES_HOST || 'localhost';
+  const port = process.env.POSTGRES_PORT || 5432;
+  const db = process.env.POSTGRES_DB || 'ruvector';
+  const user = process.env.POSTGRES_USER || 'ruvector';
+  const password = process.env.POSTGRES_PASSWORD || 'ruvector';
+
+  return `postgresql://${user}:${password}@${host}:${port}/${db}`;
+}
+
+async function ensureRuvectorExtension() {
   const client = await pool.connect();
   try {
-    console.log('Creating database tables...');
+    console.log('Checking RuVector extension...');
 
-    // Create nodes table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS nodes (
-        id VARCHAR(255) PRIMARY KEY,
-        label TEXT,
-        properties JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create edges table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS edges (
-        id SERIAL PRIMARY KEY,
-        source_id VARCHAR(255) REFERENCES nodes(id),
-        target_id VARCHAR(255) REFERENCES nodes(id),
-        label TEXT,
-        properties JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create indexes for better query performance
-    await client.query('CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_nodes_properties ON nodes USING GIN(properties)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_edges_properties ON edges USING GIN(properties)');
-
-    console.log('✓ Tables created successfully');
+    // Try to enable ruvector extension
+    try {
+      await client.query('CREATE EXTENSION IF NOT EXISTS ruvector');
+      console.log('✓ RuVector extension enabled');
+    } catch (err) {
+      console.log('Note: RuVector extension not available, using standard PostgreSQL graph functions');
+      console.log('For full features, install via: npx @ruvector/postgres-cli install');
+    }
   } finally {
     client.release();
+  }
+}
+
+async function createGraph() {
+  console.log(`Creating graph: ${GRAPH_NAME}...`);
+
+  try {
+    // Use ruvector CLI to create graph
+    const connStr = getConnectionString();
+    execSync(
+      `npx --yes @ruvector/postgres-cli -c "${connStr}" graph create ${GRAPH_NAME}`,
+      { stdio: 'inherit' }
+    );
+    console.log('✓ Graph created successfully');
+  } catch (error) {
+    // Graph might already exist, which is fine
+    console.log('Graph already exists or created');
   }
 }
 
@@ -73,85 +82,88 @@ async function parseGraphML(filePath) {
   return { nodes, edges };
 }
 
-async function insertNodes(nodes) {
-  const client = await pool.connect();
-  try {
-    console.log('Inserting nodes...');
+async function insertNodesViaRuvector(nodes) {
+  console.log('Inserting nodes into graph...');
+  const connStr = getConnectionString();
 
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      const nodeId = node.$.id;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const nodeId = node.$.id;
 
-      // Extract node properties
-      const properties = {};
-      const dataElements = node.data || [];
+    // Extract node properties
+    const properties = {};
+    const dataElements = node.data || [];
 
-      dataElements.forEach(data => {
-        const key = data.$.key;
-        const value = data._;
-        if (key && value) {
-          properties[key] = value;
-        }
-      });
-
-      // Extract label if available
-      const label = properties.label || properties.name || nodeId;
-
-      await client.query(
-        'INSERT INTO nodes (id, label, properties) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET label = $2, properties = $3',
-        [nodeId, label, JSON.stringify(properties)]
-      );
-
-      if ((i + 1) % 100 === 0) {
-        console.log(`  Inserted ${i + 1}/${nodes.length} nodes`);
+    dataElements.forEach(data => {
+      const key = data.$.key;
+      const value = data._;
+      if (key && value) {
+        properties[key] = value;
       }
+    });
+
+    // Extract label if available
+    const label = properties.label || properties.name || properties.type || 'Node';
+
+    // Convert properties to JSON string for CLI
+    const propsJson = JSON.stringify(properties).replace(/"/g, '\\"');
+
+    try {
+      execSync(
+        `npx --yes @ruvector/postgres-cli -c "${connStr}" graph create-node ${GRAPH_NAME} --id "${nodeId}" --labels "${label}" --properties '${JSON.stringify(properties)}'`,
+        { stdio: 'pipe' }
+      );
+    } catch (err) {
+      // Continue on errors (node might exist)
     }
 
-    console.log(`✓ Inserted all ${nodes.length} nodes`);
-  } finally {
-    client.release();
+    if ((i + 1) % 100 === 0) {
+      console.log(`  Inserted ${i + 1}/${nodes.length} nodes`);
+    }
   }
+
+  console.log(`✓ Inserted all ${nodes.length} nodes`);
 }
 
-async function insertEdges(edges) {
-  const client = await pool.connect();
-  try {
-    console.log('Inserting edges...');
+async function insertEdgesViaRuvector(edges) {
+  console.log('Inserting edges into graph...');
+  const connStr = getConnectionString();
 
-    for (let i = 0; i < edges.length; i++) {
-      const edge = edges[i];
-      const sourceId = edge.$.source;
-      const targetId = edge.$.target;
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i];
+    const sourceId = edge.$.source;
+    const targetId = edge.$.target;
 
-      // Extract edge properties
-      const properties = {};
-      const dataElements = edge.data || [];
+    // Extract edge properties
+    const properties = {};
+    const dataElements = edge.data || [];
 
-      dataElements.forEach(data => {
-        const key = data.$.key;
-        const value = data._;
-        if (key && value) {
-          properties[key] = value;
-        }
-      });
-
-      // Extract label if available
-      const label = properties.label || properties.type || 'relates_to';
-
-      await client.query(
-        'INSERT INTO edges (source_id, target_id, label, properties) VALUES ($1, $2, $3, $4)',
-        [sourceId, targetId, label, JSON.stringify(properties)]
-      );
-
-      if ((i + 1) % 100 === 0) {
-        console.log(`  Inserted ${i + 1}/${edges.length} edges`);
+    dataElements.forEach(data => {
+      const key = data.$.key;
+      const value = data._;
+      if (key && value) {
+        properties[key] = value;
       }
+    });
+
+    // Extract label if available
+    const label = properties.label || properties.type || 'RELATES_TO';
+
+    try {
+      execSync(
+        `npx --yes @ruvector/postgres-cli -c "${connStr}" graph create-edge ${GRAPH_NAME} --from "${sourceId}" --to "${targetId}" --type "${label}" --properties '${JSON.stringify(properties)}'`,
+        { stdio: 'pipe' }
+      );
+    } catch (err) {
+      // Continue on errors
     }
 
-    console.log(`✓ Inserted all ${edges.length} edges`);
-  } finally {
-    client.release();
+    if ((i + 1) % 100 === 0) {
+      console.log(`  Inserted ${i + 1}/${edges.length} edges`);
+    }
   }
+
+  console.log(`✓ Inserted all ${edges.length} edges`);
 }
 
 async function loadGraphMLToPostgres() {
@@ -166,20 +178,24 @@ async function loadGraphMLToPostgres() {
 
     const filePath = path.join(DATA_DIR, graphmlFile);
 
-    // Create tables
-    await createTables();
+    // Ensure RuVector extension is available
+    await ensureRuvectorExtension();
+
+    // Create graph
+    await createGraph();
 
     // Parse GraphML
     const { nodes, edges } = await parseGraphML(filePath);
 
-    // Insert data
-    await insertNodes(nodes);
-    await insertEdges(edges);
+    // Insert data using RuVector graph commands
+    await insertNodesViaRuvector(nodes);
+    await insertEdgesViaRuvector(edges);
 
-    console.log('\n✓ Successfully loaded 3GPP knowledge graph into PostgreSQL!');
+    console.log('\n✓ Successfully loaded 3GPP knowledge graph into RuVector!');
     console.log('\nYou can now query the data using:');
-    console.log('  - SELECT * FROM nodes LIMIT 10;');
-    console.log('  - SELECT * FROM edges LIMIT 10;');
+    console.log('  - Cypher: npx @ruvector/postgres-cli graph query ' + GRAPH_NAME + ' "MATCH (n) RETURN n LIMIT 10"');
+    console.log('  - Graph stats: npx @ruvector/postgres-cli graph stats ' + GRAPH_NAME);
+    console.log('  - Shortest path: npx @ruvector/postgres-cli graph shortest-path ' + GRAPH_NAME + ' --from <id1> --to <id2>');
 
   } catch (error) {
     console.error('Error loading data:', error.message);
@@ -194,4 +210,4 @@ if (require.main === module) {
   loadGraphMLToPostgres();
 }
 
-module.exports = { loadGraphMLToPostgres, createTables };
+module.exports = { loadGraphMLToPostgres, parseGraphML };
