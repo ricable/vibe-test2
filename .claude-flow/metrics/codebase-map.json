@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-01-16T11:39:06.308Z",
+  "projectRoot": "/home/user/vibe-test2",
+  "structure": {
+    "hasPackageJson": true,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1768563546308
+}
