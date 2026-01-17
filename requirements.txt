@@ -1,0 +1,35 @@
+# Core DSPy Framework
+dspy-ai>=2.5.0
+
+# Vector Search and Embeddings
+faiss-cpu>=1.8.0
+sentence-transformers>=2.3.0
+chromadb>=0.4.0
+
+# Document Processing
+langchain>=0.1.0
+pypdf>=3.17.0
+unstructured>=0.11.0
+
+# Machine Learning and Optimization
+openai>=1.0.0
+anthropic>=0.18.0
+transformers>=4.36.0
+torch>=2.1.0
+
+# MLflow for Experiment Tracking
+mlflow>=2.9.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+pydantic>=2.5.0
+
+# Optional: Advanced models
+# qwen-thinking  # For reflection model
+# llama-cpp-python  # For local model inference

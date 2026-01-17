@@ -1,5 +1,57 @@
+# Node.js
 node_modules/
-.env
 *.graphml
+
+# Environment
+.env
+
+# Data and logs
 data/
 *.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Vector stores
+*.faiss
+*.index
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model files
+*.pth
+*.pt
+*.ckpt
+
+# Cache
+.cache/
+*.tmp
