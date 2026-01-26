@@ -1,7 +1,7 @@
 {
   "name": "vibe-test2",
-  "version": "1.0.0",
-  "description": "3GPP Knowledge Graph integration with PostgreSQL using @ruvector/postgres-cli and Hugging Face dataset",
+  "version": "2.0.0",
+  "description": "O-RAN 3GPP Knowledge Graph with GNN, ADR, and DDD - Powered by RuVector, Claude Flow, and Agentic Flow",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -11,6 +11,13 @@
     "query": "node query-examples.js",
     "advanced": "node advanced-examples.js",
     "install-ruvector": "npx @ruvector/postgres-cli install",
+    "gnn:create": "npx @ruvector/gnn create",
+    "gnn:train": "npx @ruvector/gnn train",
+    "gnn:infer": "npx @ruvector/gnn infer",
+    "flow:start": "npx claude-flow start",
+    "agentic:run": "npx agentic-flow run",
+    "docs:adr": "echo 'ADR docs available in docs/adr/'",
+    "docs:ddd": "echo 'DDD docs available in docs/ddd/'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +25,7 @@
     "url": "http://local_proxy@127.0.0.1:55918/git/ricable/vibe-test2"
   },
   "keywords": [
+    "o-ran",
     "3gpp",
     "knowledge-graph",
     "postgresql",
@@ -32,16 +40,28 @@
     "cypher",
     "neo4j",
     "hyperbolic-embeddings",
-    "attention-mechanisms"
+    "attention-mechanisms",
+    "adr",
+    "architecture-decision-records",
+    "ddd",
+    "domain-driven-design",
+    "claude-flow",
+    "agentic-flow",
+    "near-rt-ric",
+    "non-rt-ric"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@huggingface/hub": "^2.7.1",
+    "@ruvector/gnn": "^0.1.22",
     "@ruvector/postgres-cli": "^0.2.5",
+    "agentic-flow": "^2.0.6",
+    "claude-flow": "^3.0.0-alpha.179",
     "dotenv": "^17.2.3",
     "graphml-js": "^0.4.0",
     "pg": "^8.16.3",
+    "ruvector": "^0.1.96",
     "xml2js": "^0.6.2"
   }
 }
