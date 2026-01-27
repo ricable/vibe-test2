@@ -1,5 +1,115 @@
+# Dependencies
 node_modules/
-.env
+
+# Data files
 *.graphml
 data/
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================================
+# CREDENTIALS & SECRETS - NEVER COMMIT THESE
+# ===========================================
+
+# Environment files
+.env
+.env.*
+!.env.example
+.envrc
+
+# AWS
+.aws/
+aws-credentials
+*.pem
+
+# Google Cloud
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!jsconfig.json
+gcloud-credentials.json
+service-account*.json
+*-credentials.json
+
+# Azure
+.azure/
+azure-credentials
+
+# API Keys files
+api_keys.txt
+api-keys.txt
+secrets.txt
+secrets.json
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+credentials.yml
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.key
+!*.key.example
+
+# Certificates
+*.crt
+*.cer
+*.ca-bundle
+*.p7b
+*.p7c
+*.p7s
+*.p12
+*.pfx
+
+# Keystore files
+*.jks
+*.keystore
+
+# Docker secrets
+docker-compose.override.yml
+.docker/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+
+# Ansible
+*.vault
+vault.yml
+vault.yaml
+
+# Pre-commit secrets baseline
+.secrets.baseline
+
+# Hugging Face
+hf_token.txt
+
+# Database
+*.sqlite
+*.db
+dump.sql
+*.dump
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
