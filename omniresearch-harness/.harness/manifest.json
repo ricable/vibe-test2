@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "generator": "metaharness@0.1.15",
+  "template": "vertical:agentics+vertical:ai",
+  "template_version": "0.0.0",
+  "vars": {
+    "name": "omniresearch-harness",
+    "description": "Autonomous research orchestrator — runs multi-agent coding swarms (omnigent) through fixed-budget, eval-gated ML research loops (autoresearch-mlx).",
+    "host": "claude-code"
+  },
+  "hosts": [
+    "claude-code"
+  ],
+  "sources": [
+    "https://github.com/omnigent-ai/omnigent",
+    "https://github.com/trevin-creator/autoresearch-mlx"
+  ],
+  "files": {
+    ".claude-plugin/plugin.json": "02ade41a3a4615afd795f478124ec6b2ad43a7f41bffc274ba8ffd00402b36ee",
+    ".claude/commands/doctor.md": "2f1475fa0ed34729cb2ed9d6cecf29e99781da0a56afef133361e3ff0a17bb52",
+    ".claude/settings.json": "b8c2d7738fd52bc9e6ce8baf4b536655cb064ac6561bac63a991d57c525ff107",
+    ".claude/skills/eval-report/SKILL.md": "b70d7953e100813b52ae826a110f9690880115923345aa23e6fbed61a8558dfe",
+    ".claude/skills/memory-inspect/SKILL.md": "996b09e2dd12f68a589d94de0cbaef1522a30c912157cbbd6557abd3c4fd1ff3",
+    ".claude/skills/research-loop/SKILL.md": "39abd82936c82aa5fd8747a8e5ca9b706e227af5a0c3540f7aaa62544c83cd55",
+    ".claude/skills/run-swarm/SKILL.md": "3f24a2eff1dd4a185f899c634ad2e5c4e85bb00826493cb194b375d80480029b",
+    ".harness/mcp-policy.json": "76a4566736e639621bc411c602dc891d143993c2fb5724924cb08b7a510762c1",
+    "CLAUDE.md": "8f75299e69ffa8a141b1e20b4efe4555b8c9237bfe80f5ec470f45e418913e47",
+    "LICENSE": "b2e47e06a57604bc965014821c8d2d610d7b83199a41f23aaddb774422e8b21d",
+    "README.md": "b2df7bff4d165403f23fe53988df475ed9a35fd1d800cb8f7e374be3bb3a6cc9",
+    "SOURCES.md": "a00e4bef1cc9dfa14a93ae75fb59517b8fcfc9244dd0deb5f110da8d1c8db4d1",
+    "__tests__/smoke.test.ts": "d6c6877df9c2bba1365483f35ca2ea4f49912d04453e4f1cc997fa0be6eb9754",
+    "bin/cli.js": "1b6a04a0dc9627728dc0f65144f031d31a01999624b45a5ecf40d382b2de6dd8",
+    "package.json": "372a813fee9dfffdff4be1a4586dda733f77bbc0f6c915747d6f1455a0099584",
+    "src/agents/critic.ts": "26710566c05ceae5ad6e6633c890f1f6bf42d69b222e6fee1be1e08f538f4f90",
+    "src/agents/data-curator.ts": "28e6b10fafda869f28aff868c75ad41ad78915206ccc60a4b4337992a1d4274a",
+    "src/agents/deployer.ts": "f0817dbe7e727054367019a18df8e25cd5597bb0defb075585c37c6cf98e1c76",
+    "src/agents/evaluator.ts": "8b25836303f96b173bff6c5f2c04af5a6ee9497bac18e5c08ff403efc7855758",
+    "src/agents/orchestrator.ts": "6bb4f014782c3f267a7e9a821c771a08a5898ead607aaa5e7bcf48aec9f20e75",
+    "src/agents/planner.ts": "b83db08655db67b7d3c135d9445c97361544be0c98b43ce0c1c9da7ba642e9ca",
+    "src/agents/trainer.ts": "07cc85e6a64e5616f5bbdd9b6706610b28c003797cf7e09e15edc48003470fa9",
+    "src/agents/worker.ts": "adf88fa87ce4f1dbfbee91b42fe9dd3a1ef4b0e003dc58117636b18c7bc4d7a8",
+    "src/init.ts": "7db302fb005b0157cb7c1cdb3e4d70c8fe968f51b44c48ce5562c301b75643ac",
+    "tsconfig.json": "8b4e730a1aa39162ac574455d7a98e1881f5313ca80ffe503b9652dcf0c76b9d"
+  },
+  "generated_at": "2026-06-17T18:28:11.807Z",
+  "meta": {
+    "surface": "cli"
+  }
+}

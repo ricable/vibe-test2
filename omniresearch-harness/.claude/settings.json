@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx omniresearch-harness*)",
+      "mcp__omniresearch-harness__*",
+      "mcp__swarm_bus__*"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "mcpServers": {
+    "omniresearch-harness": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "omniresearch-harness@latest",
+        "mcp",
+        "start"
+      ]
+    },
+    "swarm_bus": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "omniresearch-harness@latest",
+        "mcp",
+        "swarm"
+      ]
+    }
+  }
+}
