@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "artifact": "omniresearch-harness@0.1.0",
+  "manifest_sha256": "a4b77af57cfc4156467dbb6543e34b14516756a58cf609d72414982f71e6ff65",
+  "algorithm": "ed25519",
+  "signature": null,
+  "public_key": null,
+  "status": "unsigned",
+  "note": "Run `harness sign` with your Ed25519 witness key to populate signature/public_key.",
+  "generated_at": "2026-06-17T18:28:11.808Z"
+}

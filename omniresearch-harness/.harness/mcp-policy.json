@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "defaultDeny": true,
+  "allowNetwork": false,
+  "allowShell": false,
+  "allowFileWrite": false,
+  "requireApprovalForDangerous": true,
+  "toolTimeoutMs": 30000,
+  "maxToolCallsPerTurn": 8,
+  "auditLog": true,
+  "allow": [
+    "mcp__omniresearch-harness__*",
+    "mcp__swarm_bus__*"
+  ],
+  "deny": [
+    "Read(./.env)",
+    "Read(./.env.*)",
+    "Bash(rm:*)",
+    "Bash(git push:*)",
+    "Write(*)",
+    "Edit(*)"
+  ]
+}
